@@ -1,21 +1,26 @@
+extern crate ipnetwork;
 extern crate pnet;
 
-use pnet::datalink::{self, Channel::Ethernet, DataLinkReceiver};
+use ipnetwork::Ipv4Network;
+use pnet::datalink::DataLinkReceiver;
+use pnet::datalink::{self, Channel::Ethernet};
 use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPacket};
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::{MutablePacket, Packet};
+use std::env;
 use std::net::Ipv4Addr;
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-
-
-fn listen_for_replies(rx: Arc<Mutex<Box<dyn DataLinkReceiver>>>, source_ip: Ipv4Addr, timeout: Duration) {
+fn listen_for_replies(
+    rx: Arc<Mutex<Box<dyn DataLinkReceiver>>>,
+    source_ip: Ipv4Addr,
+    timeout: Duration,
+) {
     let start_time = std::time::Instant::now();
     println!("{:<20} {:<20}", "IP Address", "MAC Address");
-    println!("{:-<42}", "");  // Print a dividing line
+    println!("{:-<42}", ""); // Print a dividing line
 
     loop {
         let mut rx_lock = rx.lock().unwrap();
@@ -23,18 +28,20 @@ fn listen_for_replies(rx: Arc<Mutex<Box<dyn DataLinkReceiver>>>, source_ip: Ipv4
             if let Some(ethernet_packet) = EthernetPacket::new(packet) {
                 if ethernet_packet.get_ethertype() == EtherTypes::Arp {
                     if let Some(arp_packet) = ArpPacket::new(ethernet_packet.payload()) {
-                        if arp_packet.get_operation() == ArpOperations::Reply && 
-                            arp_packet.get_sender_proto_addr() != source_ip {
-                                println!("{:<20} {:<20}", 
-                                         arp_packet.get_sender_proto_addr().to_string(), 
-                                         arp_packet.get_sender_hw_addr().to_string());
+                        if arp_packet.get_operation() == ArpOperations::Reply
+                            && arp_packet.get_sender_proto_addr() != source_ip
+                        {
+                            println!(
+                                "{:<20} {:<20}",
+                                arp_packet.get_sender_proto_addr().to_string(),
+                                arp_packet.get_sender_hw_addr().to_string()
+                            );
                         }
                     }
                 }
             }
         }
 
-        // Release the lock by limiting its scope
         drop(rx_lock);
 
         if start_time.elapsed() > timeout {
@@ -45,20 +52,31 @@ fn listen_for_replies(rx: Arc<Mutex<Box<dyn DataLinkReceiver>>>, source_ip: Ipv4
     }
 }
 
-fn main() {
-    let interface_name = "wlo1"; // Replace with your interface name
-    let interfaces = datalink::interfaces();
-    let interface = interfaces.into_iter()
-        .find(|iface| iface.name == interface_name)
-        .expect("Failed to find interface");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 4 {
+        return Err("Usage: arp_scanner <interface_name> <source_ip> <subnet_cidr>".into());
+    }
 
-    let source_ip = Ipv4Addr::from_str("192.168.86.34").expect("Invalid IP"); // Replace with your IP
-    let source_mac = interface.mac.expect("No MAC address found for interface");
+    let interface_name = &args[1];
+    let source_ip = args[2]
+        .parse::<Ipv4Addr>()
+        .map_err(|_| "Invalid source IP address format")?;
+    let subnet = args[3]
+        .parse::<Ipv4Network>()
+        .map_err(|_| "Invalid subnet CIDR format")?;
+
+    let interface = datalink::interfaces()
+        .into_iter()
+        .find(|iface| iface.name == *interface_name)
+        .ok_or("Failed to find interface")?;
+
+    let source_mac = interface.mac.ok_or("No MAC address found for interface")?;
 
     let (mut tx, rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
-        Ok(_) => panic!("Unhandled channel type"),
-        Err(e) => panic!("An error occurred when creating the datalink channel: {}", e),
+        Ok(_) => return Err("Unhandled channel type".into()),
+        Err(e) => return Err(e.into()),
     };
 
     let rx = Arc::new(Mutex::new(rx));
@@ -66,17 +84,12 @@ fn main() {
     // Spawn a thread to listen for replies
     let rx_clone = Arc::clone(&rx);
     let listener_handle = thread::spawn(move || {
-        let timeout = Duration::from_secs(15); // Adjust this timeout as needed
+        let timeout = Duration::from_secs(15);
         listen_for_replies(rx_clone, source_ip, timeout);
     });
 
-    // Define the range of the last octet for a /24 subnet
-    let start_last_octet = 1;
-    let end_last_octet = 254;
-
-    for last_octet in start_last_octet..=end_last_octet {
-        let target_ip_str = format!("192.168.86.{}", last_octet);
-        let target_ip = Ipv4Addr::from_str(&target_ip_str).expect("Invalid target IP");
+    for ip in subnet.iter() {
+        let target_ip = ip;
 
         let mut ethernet_buffer = [0u8; 42];
         let mut ethernet_packet = MutableEthernetPacket::new(&mut ethernet_buffer).unwrap();
@@ -101,15 +114,15 @@ fn main() {
         ethernet_packet.set_payload(arp_packet.packet_mut());
 
         let packet_data = ethernet_packet.packet();
-        match tx.send_to(packet_data, Some(interface.clone())) {
-            Some(Ok(_)) => {
-                // ARP request sent successfully, but we're not printing it anymore
-            },
-            Some(Err(e)) => eprintln!("Failed to send ARP request: {}", e),
-            _ => (),
+        if let Some(Err(e)) = tx.send_to(packet_data, Some(interface.clone())) {
+            eprintln!("Failed to send ARP request: {}", e);
         }
     }
 
     // Wait for the listener thread to complete
-    listener_handle.join().expect("Listener thread has panicked");
+    listener_handle
+        .join()
+        .expect("Listener thread has panicked");
+
+    Ok(())
 }
