@@ -1,6 +1,3 @@
-Here's a general `README.md` file for your app:
-
-```markdown
 # ARP Scanner
 
 ARP Scanner is a simple Rust application that scans a specified subnet for devices and retrieves their IP and MAC addresses using ARP requests. It utilizes the pnet and ipnetwork crates for networking functionality.
