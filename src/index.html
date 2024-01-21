@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <link rel="stylesheet" type="text/css" href="datatables.min.css">
+        <link rel="stylesheet" href="styles.css"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Tauri App</title>
+        <script type="module" src="/main.js" defer></script>
+        <script type="text/javascript" src="/datatables.min.js"></script>
+    </head>
+    <body>
+        <div class="card">
+            <form id="arpScanForm">
+                <div class="input-group">
+                    <label for="interfaceName">Interface Name:</label>
+                    <select id="interfaceName" class="interface-dropdown"></select>
+
+                </div>
+                <div class="input-group">
+                    <label for="sourceIp">Source IP:</label>
+                    <input type="text" id="sourceIp" placeholder="Enter Source IP">
+                </div>
+                <div class="input-group">
+                    <label for="subnet">Subnet:</label>
+                    <input type="text" id="subnet" placeholder="Enter Subnet">
+                </div>
+                <button type="button" id="scanButton">Start ARP Scan</button>
+            </form>
+        </div>
+        <div id="resultsCard" class="card">
+            <table id="scanResults" class="display"></table>
+        </div> 
+    </body>
+</html>

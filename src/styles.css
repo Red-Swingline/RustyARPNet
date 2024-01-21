@@ -1,0 +1,158 @@
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card {
+  background-color: #333;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  margin-bottom: 30px;
+  width: 80%; /* Set to 80% of the parent container's width */
+  max-width: 800px; /* Adjust this value as needed or remove it */
+}
+.input-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input[type="text"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #555;
+  color: #fff;
+  font-size: 16px;
+}
+
+#scanButton {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#scanButton:hover {
+  background-color: #66bb6a;
+}
+
+#resultsCard {
+  display: none; /* Hidden by default, can be shown after scan */
+}
+#interfaceName {
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  background-color: #555 !important; /* Dark background */
+  color: #fff !important; /* Light text color */
+  font-size: 16px;
+  -webkit-appearance: none; /* For WebKit browsers */
+  -moz-appearance: none; /* For Mozilla browsers */
+  appearance: none; /* For modern browsers */
+  padding: 10px;
+}
+
+/* For the arrow down icon */
+#interfaceName::-ms-expand {
+  display: none; /* For Internet Explorer */
+}
+
+#interfaceName:focus {
+  outline: none; /* Removes the default focus outline */
+}
+
+/* Custom arrow */
+#interfaceName {
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 12px;
+}
+/* DataTables Styling */
+.dataTables_wrapper {
+  color: #fff; /* Light text color for overall DataTable content */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  color: #fff !important; /* Text color for pagination buttons */
+  border: 1px solid #111; /* Border color for pagination buttons */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  color: #ddd !important; /* Text color for pagination buttons */
+  border: 1px solid #444; /* Border color for pagination buttons */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background-color: #555; /* Hover background color for pagination buttons */
+}
+/* Style the DataTables search input and length select dropdown */
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+  background-color: #555!important; /* Dark background */
+  color: #ddd; /* Light text color */
+  border: 1px solid #444; /* Matching border color */
+  border-radius: 4px; /* Optional: rounded corners */
+  padding: 5px;
+}
+
+/* Style the search input placeholder */
+.dataTables_wrapper .dataTables_filter input::placeholder {
+  color: #ccc;
+}
+
+/* Style the length select dropdown */
+.dataTables_wrapper .dataTables_length select {
+  -webkit-appearance: none; /* Removes default styling on WebKit browsers */
+  -moz-appearance: none; /* Removes default styling on Mozilla browsers */
+  appearance: none; /* Removes default styling */
+  padding-right: 20px; /* Make room for the custom dropdown arrow */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%23ddd" viewBox="0 0 16 16"><path d="M1 3l7 7 7-7z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+  background-size: 12px;
+}
+
+/* Hover states for inputs */
+.dataTables_wrapper .dataTables_filter input:hover,
+.dataTables_wrapper .dataTables_length select:hover {
+  background-color: #666; /* Slightly lighter background on hover */
+}
+
+/* Focus states for inputs */
+.dataTables_wrapper .dataTables_filter input:focus,
+.dataTables_wrapper .dataTables_length select:focus {
+  background-color: #777; /* Different background for focus */
+  color: #fff;
+  outline: none; /* Remove default focus outline */
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 768px) {
+  .card {
+      width: 95%;
+  }
+
+  input[type="text"], button {
+      width: 100%;
+  }
+}
