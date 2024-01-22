@@ -27,7 +27,8 @@ fn listen_for_replies(
         {
             let mut rx_guard = rx.lock().unwrap();
             match rx_guard.next() {
-                Ok(packet) => { // Directly handle the packet
+                Ok(packet) => {
+                    // Directly handle the packet
                     if let Some(ethernet_packet) = EthernetPacket::new(packet) {
                         if ethernet_packet.get_ethertype() == EtherTypes::Arp {
                             if let Some(arp_packet) = ArpPacket::new(ethernet_packet.payload()) {
@@ -45,7 +46,7 @@ fn listen_for_replies(
                             }
                         }
                     }
-                },
+                }
                 Err(e) => {
                     eprintln!("Error receiving packet: {}", e);
                 }
@@ -60,13 +61,16 @@ fn listen_for_replies(
     }
 }
 
-
-
 fn send_scan_result_to_frontend(app: &AppHandle, result: serde_json::Value) -> Result<(), String> {
     app.emit_all("arp-scan-result", &result)
         .map_err(|e| e.to_string())
 }
-pub fn arp_scan(app: AppHandle, interface_name: String, source_ip: String, subnet: String) -> Result<String, String> {
+pub fn arp_scan(
+    app: AppHandle,
+    interface_name: String,
+    source_ip: String,
+    subnet: String,
+) -> Result<String, String> {
     let source_ip = source_ip
         .parse::<Ipv4Addr>()
         .map_err(|_| "Invalid source IP address format".to_string())?;
@@ -79,7 +83,9 @@ pub fn arp_scan(app: AppHandle, interface_name: String, source_ip: String, subne
         .find(|iface| iface.name == interface_name)
         .ok_or("Failed to find interface".to_string())?;
 
-    let source_mac = interface.mac.ok_or("No MAC address found for interface".to_string())?;
+    let source_mac = interface
+        .mac
+        .ok_or("No MAC address found for interface".to_string())?;
 
     let (mut tx, rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
@@ -92,7 +98,7 @@ pub fn arp_scan(app: AppHandle, interface_name: String, source_ip: String, subne
     let rx_clone = Arc::clone(&rx);
     let listener_handle = thread::spawn(move || {
         let timeout = Duration::from_secs(3);
-        listen_for_replies(app,rx_clone, source_ip, timeout)
+        listen_for_replies(app, rx_clone, source_ip, timeout)
     });
 
     for ip in subnet.iter() {

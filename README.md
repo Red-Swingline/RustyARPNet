@@ -10,7 +10,7 @@ If you found this app useful
 </div>
 
 ### ToDO List
-- [ ] Add port scanning for each device 
+- [x] Add port scanning for each device 
 - [ ] Export scan results to report
 - [ ] Add form validation
 

@@ -145,7 +145,34 @@ input[type="text"] {
   color: #fff;
   outline: none; /* Remove default focus outline */
 }
+/* Style for the details-control column buttons */
+td.details-control {
+  text-align: center;
+  cursor: pointer;
+}
 
+td.details-control i {
+  cursor: pointer;
+  color: #ccc;
+}
+
+/* Style for the child row details */
+table.dataTable tbody tr.shown td.details-control i {
+  color: #4CAF50; /* Change color when the child row is shown, if needed */
+}
+
+/* Style for the child row details table */
+table.child-details {
+  background-color: #444; /* Dark background for the child row */
+  color: #fff; /* Light text for the child row */
+  width: 100%; /* Make the child table take the full width of the parent row */
+  margin-left: -5px; /* Align the child table with the parent row */
+}
+
+/* Ensure the DataTables' child row has padding to align with the main table */
+table.dataTable tbody td.child {
+  padding: 0.5em 0.85em; /* Match DataTables default padding */
+}
 /* Responsive layout for smaller screens */
 @media (max-width: 768px) {
   .card {
