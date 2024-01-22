@@ -47,20 +47,25 @@ event.listen('arp-scan-result', (event) => {
     console.log('Received rust-message event:', event);
     displayResults(event.payload);
 });
+
 // Event listener for port scan result
 event.listen('port-scan-result', (event) => {
-  console.log('Received port-scan-result event:', event);
-  // Find the row with the matching IP address and update it
-  let rowData = findRowByIp(event.payload.ip_address);
-  if (rowData) {
-      let table = $('#scanResults').DataTable();
-      let tr = $(rowData.node());
-      let row = table.row(tr);
+    console.log('Received port-scan-result event:', event);
+    let table = $('#scanResults').DataTable();
+    let rowIndex = findRowIndexByIp(event.payload.ip_address, table);
+  
+    if (rowIndex !== null) {
+      let row = table.row(rowIndex);
+      let rowData = row.data();
+      rowData.open_ports = event.payload.open_ports; // Add or update the open_ports data
+      row.data(rowData).draw(false); // Update and redraw the row
+  
+      // Update the child row only if it is currently shown
       if (row.child.isShown()) {
-          row.child(format(event.payload)).show();
+        row.child(format(rowData)).show();
       }
-  }
-});
+    }
+  });
 
 // Event listener for the scan button
 document.getElementById('scanButton').addEventListener('click', function () {
@@ -142,13 +147,16 @@ function format(d) {
       </tr>
   </table>`;
 }
-// Helper function to find the row by IP address
-function findRowByIp(ipAddress) {
-  let table = $('#scanResults').DataTable();
-  return table.rows().eq(0).filter(function (idx) {
-      let data = table.row(idx).data();
-      return data && data[2] === ipAddress;
-  }).any() ? table.row(function (idx, data, node) {
-      return data[2] === ipAddress;
-  }) : null;
-}
+// Helper function to find the index of the row by IP address
+function findRowIndexByIp(ipAddress, table) {
+    let index = null;
+    table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+      let data = this.data();
+      if (data[2] === ipAddress) {
+        index = rowIdx;
+        return false; // To stop the loop once the row is found
+      }
+      return true; // To continue the loop if not found
+    });
+    return index; // Return the index or null if not found
+  }
