@@ -3,16 +3,60 @@
 
 mod arp_scanner;
 mod port_scanner;
-use arp_scanner::get_interface_names;
 use crate::port_scanner::scan_ports;
-use pnet::datalink;
-use serde_json::json;
-use std::net::Ipv4Addr;
+use serde_json::Value;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::net::IpAddr;
-use tokio::time::Duration;
+use std::path::PathBuf;
+use tauri::api::dialog::FileDialogBuilder;
 use tauri::AppHandle;
 use tauri::Manager;
+use tokio::time::Duration;
 
+#[tauri::command(rename_all = "snake_case")]
+async fn save_report(
+    app: AppHandle,
+    report_data: Vec<Value>, // Assume we receive a Vec of serde_json::Value objects representing the data
+) {
+    let _window = app.get_window("main").unwrap();
+
+    // Use FileDialogBuilder to save a file
+    FileDialogBuilder::new()
+        .set_title("Save your report")
+        .add_filter("Text file", &["txt"])
+        .save_file(move |path: Option<PathBuf>| {
+            if let Some(path) = path {
+                // Attempt to create and write to the file
+                match File::create(path) {
+                    Ok(file) => {
+                        let mut writer = BufWriter::new(file);
+                        for entry in report_data {
+                            // Assume `entry` is a JSON object with "ip_address" and "open_ports"
+                            if let (Some(ip), Some(ports)) = (
+                                entry.get("ip_address").and_then(Value::as_str),
+                                entry.get("open_ports").and_then(Value::as_array),
+                            ) {
+                                // Convert open ports to a string
+                                let ports_str = ports
+                                    .iter()
+                                    .map(|p| p.as_u64().unwrap_or(0).to_string())
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                let line =
+                                    format!("IP Address: {}, Open Ports: {}\n", ip, ports_str);
+                                if writer.write_all(line.as_bytes()).is_err() {
+                                    eprintln!("Failed to write to the report file");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    Err(_) => eprintln!("Failed to create the report file"),
+                }
+            }
+        });
+}
 #[tauri::command]
 async fn arp_scan(
     app: AppHandle,
@@ -38,7 +82,7 @@ async fn scan_ports_for_ip(
         .map_err(|_| "Invalid IP address format".to_string())?;
 
     let concurrency = 1000; // Adjust the concurrency level based on your requirements
-    let timeout = Duration::from_secs(3); // Adjust the timeout duration as needed
+    let timeout = Duration::from_secs(5); // Adjust the timeout duration as needed
 
     // Call the scan_ports function with the appropriate parameters
     let open_ports = scan_ports(target_ip, scan_common, concurrency, timeout).await;
@@ -59,7 +103,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_network_interfaces,
             arp_scan,
-            scan_ports_for_ip
+            scan_ports_for_ip,
+            save_report
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

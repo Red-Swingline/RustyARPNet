@@ -12,6 +12,7 @@
         <script type="text/javascript" src="/datatables.min.js"></script>
     </head>
     <body>
+        
         <div class="card">
             <form id="arpScanForm">
                 <div class="input-group">
@@ -27,7 +28,11 @@
                     <label for="subnet">Subnet:</label>
                     <input type="text" id="subnet" placeholder="Enter Subnet">
                 </div>
-                <button type="button" id="scanButton">Start ARP Scan</button>
+                <div class="button-group">
+                    <button type="button" id="scanButton" class="scan-btn">Start ARP Scan</button>
+                    <button type="button" id="scanAllPortsButton" class="scan-btn" style="display: none;">Port Scan All IPs</button>
+                    <button type="button" id="saveReportsButton" class="scan-btn" style="display: none;">Save Reports</button>
+                </div>
             </form>
         </div>
         <div id="resultsCard" class="card">

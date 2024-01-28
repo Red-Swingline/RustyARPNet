@@ -15,9 +15,10 @@ body {
   padding: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   margin-bottom: 30px;
-  width: 80%; /* Set to 80% of the parent container's width */
-  max-width: 800px; /* Adjust this value as needed or remove it */
+  width: 80%;
+  max-width: 800px;
 }
+
 .input-group {
   margin-bottom: 15px;
 }
@@ -38,31 +39,67 @@ input[type="text"] {
   font-size: 16px;
 }
 
-#scanButton {
-  background-color: #4CAF50;
+/* Style for the button group */
+.button-group {
+  display: flex;
+  justify-content: flex-start; /* Align buttons to the start */
+  flex-wrap: wrap; /* Allows buttons to wrap to the next line as needed */
+  gap: 15px; /* Adds space between buttons */
+  margin-top: 15px; /* Adds some space above the button group */
+}
+
+/* Style for the scan buttons */
+.scan-btn {
+  background-color: #28a745; /* Same background color as the scan button */
   color: white;
   padding: 15px 20px;
   border: none;
   border-radius: 5px;
   font-size: 16px;
-  width: 100%;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  text-align: center;
+  flex-grow: 1; /* Each button will grow equally */
 }
 
-#scanButton:hover {
-  background-color: #66bb6a;
+.scan-btn:not(:last-child) {
+  margin-right: 15px; /* Spacing between buttons, except the last one */
+}
+
+.scan-btn:hover {
+  background-color: #218838; /* Lighter green on hover */
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 768px) {
+  .scan-btn {
+    width: 100%; /* Full width on smaller screens */
+    margin-bottom: 10px; /* Add space below the buttons */
+  }
+  
+  .button-group {
+    flex-direction: column; /* Stack the elements vertically on smaller screens */
+  }
+
+  .card {
+    width: 95%;
+  }
+
+  input[type="text"], .scan-btn {
+    width: 100%;
+  }
 }
 
 #resultsCard {
   display: none; /* Hidden by default, can be shown after scan */
 }
+
 #interfaceName {
   width: 100%;
   border: none;
   border-radius: 5px;
-  background-color: #555 !important; /* Dark background */
-  color: #fff !important; /* Light text color */
+  background-color: #555; /* Dark background */
+  color: #fff; /* Light text color */
   font-size: 16px;
   -webkit-appearance: none; /* For WebKit browsers */
   -moz-appearance: none; /* For Mozilla browsers */
@@ -70,22 +107,8 @@ input[type="text"] {
   padding: 10px;
 }
 
-/* For the arrow down icon */
-#interfaceName::-ms-expand {
-  display: none; /* For Internet Explorer */
-}
+/* Existing styles for DataTables and other elements continue here... */
 
-#interfaceName:focus {
-  outline: none; /* Removes the default focus outline */
-}
-
-/* Custom arrow */
-#interfaceName {
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-  background-position: right 10px center;
-  background-repeat: no-repeat;
-  background-size: 12px;
-}
 /* DataTables Styling */
 .dataTables_wrapper {
   color: #fff; /* Light text color for overall DataTable content */
@@ -173,13 +196,44 @@ table.child-details {
 table.dataTable tbody td.child {
   padding: 0.5em 0.85em; /* Match DataTables default padding */
 }
+/* Style for the scan buttons to match the Start ARP Scan button */
+#scanAllPortsButton,
+#saveReportsButton {
+  background-color: #17a2b8; /* Same background color as the scan button */
+  color: white;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  width: 32%; /* Adjust the width to fit all buttons in one row */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-right: 2%; /* Spacing between buttons */
+  display: none; /* Hide the buttons initially */
+}
+
+#scanAllPortsButton:hover,
+#saveReportsButton:hover {
+  background-color: #138496; /* Lighter green on hover */
+}
+
+/* Adjust the Start ARP Scan button to fit in the row with the other buttons */
+#scanButton {
+  width: 32%; /* Adjust the width to fit all buttons in one row */
+  margin-right: 2%; /* Spacing between buttons */
+}
+
 /* Responsive layout for smaller screens */
 @media (max-width: 768px) {
-  .card {
-      width: 95%;
+  #scanButton,
+  #scanAllPortsButton,
+  #saveReportsButton {
+      width: 100%; /* Full width on smaller screens */
+      margin-right: 0; /* Remove margin between buttons */
+      margin-bottom: 10px; /* Add space below the buttons */
   }
-
-  input[type="text"], button {
-      width: 100%;
+  
+  .input-group {
+      flex-direction: column; /* Stack the elements vertically on smaller screens */
   }
 }
