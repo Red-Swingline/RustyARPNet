@@ -11,10 +11,9 @@ If you found this app useful
 
 ### ToDO List
 - [x] Add port scanning for each device 
-- [ ] Export scan results to report
+- [x] Export scan results to report
 - [ ] Add form validation
 
 
 ### Screenshots
-<img src="ScreenShots/main.png" width="50%"><img src="ScreenShots/scan.png" width="50%"></br>
-<img src="ScreenShots/scan.gif" width="70%">
+<img src="ScreenShots/main.png" width="33%"><img src="ScreenShots/scan.png" width="33%"><img src="ScreenShots/report.png" width="33%"></br>
