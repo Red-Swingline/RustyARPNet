@@ -98,6 +98,7 @@ async function saveReport() {
     const data = table.rows().data().toArray(); 
     const reportData = data.map(row => ({
         ip_address: row[2], 
+        mac_address: row[3],
         open_ports: row.open_ports 
     }));
 

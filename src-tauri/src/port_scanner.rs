@@ -107,7 +107,7 @@ pub async fn scan_ports(
     x
 }
 
-pub async fn start_scan(target_ip: IpAddr, full_scan: bool) -> Result<Vec<u16>, String> {
+pub async fn _start_scan(target_ip: IpAddr, full_scan: bool) -> Result<Vec<u16>, String> {
     let concurrency = 1000;
     let timeout = Duration::from_secs(5);
 

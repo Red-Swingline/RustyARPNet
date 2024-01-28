@@ -5,58 +5,84 @@ mod arp_scanner;
 mod port_scanner;
 use crate::port_scanner::scan_ports;
 use serde_json::Value;
+use std::env;
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::BufWriter;
 use std::net::IpAddr;
 use std::path::PathBuf;
+use printpdf::*;
 use tauri::api::dialog::FileDialogBuilder;
 use tauri::AppHandle;
 use tauri::Manager;
 use tokio::time::Duration;
+use nix::unistd::{Uid, Gid, chown};
 
 #[tauri::command(rename_all = "snake_case")]
-async fn save_report(
-    app: AppHandle,
-    report_data: Vec<Value>, // Assume we receive a Vec of serde_json::Value objects representing the data
-) {
-    let _window = app.get_window("main").unwrap();
+async fn save_report(app: AppHandle, report_data: Vec<Value>) {
+    let window = app.get_window("main").unwrap();
 
-    // Use FileDialogBuilder to save a file
+    // Determine the home directory path and user details for file ownership
+    let (home_dir_path, user_uid, user_gid) = if cfg!(target_os = "windows") {
+        (env::var("USERPROFILE").unwrap_or_else(|_| "".into()), 1000, 1000)
+    } else {
+        let real_user = env::var("SUDO_USER").unwrap_or_else(|_| env::var("USER").unwrap());
+        let home_dir = format!("/home/{}", real_user);
+        let uid = env::var("SUDO_UID").unwrap_or_else(|_| "1000".to_string()).parse::<u32>().unwrap_or(1000);
+        let gid = env::var("SUDO_GID").unwrap_or_else(|_| "1000".to_string()).parse::<u32>().unwrap_or(1000);
+
+        (home_dir, uid, gid)
+    };
+
     FileDialogBuilder::new()
         .set_title("Save your report")
-        .add_filter("Text file", &["txt"])
+        .set_directory(&home_dir_path)
+        .add_filter("PDF file", &["pdf"])
         .save_file(move |path: Option<PathBuf>| {
             if let Some(path) = path {
-                // Attempt to create and write to the file
-                match File::create(path) {
-                    Ok(file) => {
-                        let mut writer = BufWriter::new(file);
-                        for entry in report_data {
-                            // Assume `entry` is a JSON object with "ip_address" and "open_ports"
-                            if let (Some(ip), Some(ports)) = (
-                                entry.get("ip_address").and_then(Value::as_str),
-                                entry.get("open_ports").and_then(Value::as_array),
-                            ) {
-                                // Convert open ports to a string
-                                let ports_str = ports
-                                    .iter()
-                                    .map(|p| p.as_u64().unwrap_or(0).to_string())
-                                    .collect::<Vec<_>>()
-                                    .join(", ");
-                                let line =
-                                    format!("IP Address: {}, Open Ports: {}\n", ip, ports_str);
-                                if writer.write_all(line.as_bytes()).is_err() {
-                                    eprintln!("Failed to write to the report file");
-                                    return;
-                                }
-                            }
+                let (doc, page1, layer1) = PdfDocument::new("Rusty ARP Report", Mm(210.0), Mm(297.0), "Layer 1");
+                let current_layer = doc.get_page(page1).get_layer(layer1);
+                let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
+
+                let mut y_position = Mm(297.0 - 20.0); // Start position for the first entry
+
+                for (index, entry) in report_data.iter().enumerate() {
+                    if index != 0 {
+                        y_position -= Mm(10.0); // Space before each new entry
+                    }
+
+                    let ip_address = entry.get("ip_address").and_then(Value::as_str).unwrap_or("");
+                    let mac_address = entry.get("mac_address").and_then(Value::as_str).unwrap_or("");
+                    let header_text = format!("IP Address: {}, MAC Address: {}", ip_address, mac_address);
+
+                    current_layer.use_text(header_text, 12.0, Mm(10.0), y_position, &font);
+                    y_position -= Mm(5.0); // Move down for the port list
+
+                    if let Some(ports) = entry.get("open_ports").and_then(Value::as_array) {
+                        for port in ports {
+                            let port_str = format!("• {}", port);
+                            y_position -= Mm(5.0); // Move down for each port
+                            current_layer.use_text(port_str, 10.0, Mm(15.0), y_position, &font);
                         }
                     }
-                    Err(_) => eprintln!("Failed to create the report file"),
+                }
+
+                let mut file = File::create(&path).expect("Failed to create PDF file");
+                doc.save(&mut BufWriter::new(&mut file)).expect("Failed to save PDF");
+
+                // Change the ownership of the file to the actual user
+                if cfg!(target_os = "linux") {
+                    let user_uid = Uid::from_raw(env::var("SUDO_UID").unwrap_or_default().parse::<u32>().unwrap_or(1000)); 
+                    let user_gid = Gid::from_raw(env::var("SUDO_GID").unwrap_or_default().parse::<u32>().unwrap_or(1000)); 
+
+                    match chown(&path, Some(user_uid), Some(user_gid)) {
+                        Ok(_) => println!("Changed file ownership successfully."),
+                        Err(e) => eprintln!("Failed to change file owner: {}", e),
+                    }
                 }
             }
         });
 }
+
 #[tauri::command]
 async fn arp_scan(
     app: AppHandle,
