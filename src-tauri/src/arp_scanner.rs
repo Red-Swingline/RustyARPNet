@@ -9,6 +9,7 @@ use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPa
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::{MutablePacket, Packet};
 use serde_json::json;
+use tauri::Emitter;
 use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -62,7 +63,7 @@ fn listen_for_replies(
 }
 
 fn send_scan_result_to_frontend(app: &AppHandle, result: serde_json::Value) -> Result<(), String> {
-    app.emit_all("arp-scan-result", &result)
+    app.emit("arp-scan-result", &result)
         .map_err(|e| e.to_string())
 }
 pub fn arp_scan(
