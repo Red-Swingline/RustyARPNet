@@ -20,6 +20,8 @@
   let unsubscribePortScan: () => void;
   let unsubscribeDebug: () => void;
 
+  let selectedIPs: { [key: string]: boolean } = {};
+
   onMount(async () => {
     interfaces = await invoke("get_network_interfaces");
     handler = new DataHandler([], { rowsPerPage: 10 });
@@ -88,6 +90,7 @@
 
   function clearResults() {
     scanResults = [];
+    selectedIPs = {};
     if (handler) {
       handler.setRows([]);
     }
@@ -169,6 +172,34 @@
   function toggleTheme() {
     theme = theme === "light" ? "business" : "light";
     document.documentElement.setAttribute("data-theme", theme);
+  }
+
+  function toggleSelectAll() {
+    const allSelected = Object.keys(selectedIPs).length === scanResults.length;
+    selectedIPs = allSelected
+      ? {}
+      : Object.fromEntries(scanResults.map(result => [result.ip_address, true]));
+  }
+
+  function toggleSelectIP(ipAddress: string) {
+    selectedIPs[ipAddress] = !selectedIPs[ipAddress];
+    if (!selectedIPs[ipAddress]) {
+      delete selectedIPs[ipAddress];
+    }
+    selectedIPs = {...selectedIPs};
+  }
+
+  async function copySelectedIPs() {
+    const selectedIPList = Object.keys(selectedIPs);
+    const pythonList = `[${selectedIPList.map(ip => `'${ip}'`).join(', ')}]`;
+    
+    try {
+      await navigator.clipboard.writeText(pythonList);
+      alert('Selected IPs copied to clipboard as a Python list!');
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      alert('Failed to copy to clipboard. Please try again.');
+    }
   }
 </script>
 
@@ -297,12 +328,23 @@
               {/if}
               Scan All Ports
             </button>
+            <button class="btn btn-secondary" on:click={copySelectedIPs} disabled={Object.keys(selectedIPs).length === 0}>
+              Copy Selected IPs
+            </button>
           </div>
         </div>
         <div class="overflow-x-auto">
           <table class="table w-full">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    on:change={toggleSelectAll}
+                    checked={Object.keys(selectedIPs).length === scanResults.length}
+                  />
+                </th>
                 <th>IP Address</th>
                 <th>MAC Address</th>
                 <th>Open Ports</th>
@@ -312,6 +354,14 @@
             <tbody>
               {#each $rows as result}
                 <tr class="hover">
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="checkbox"
+                      checked={!!selectedIPs[result.ip_address]}
+                      on:change={() => toggleSelectIP(result.ip_address)}
+                    />
+                  </td>
                   <td>{result.ip_address}</td>
                   <td>{result.mac_address}</td>
                   <td>
@@ -341,7 +391,7 @@
                 </tr>
                 {#if result.expanded}
                   <tr transition:fade>
-                    <td colspan="4">
+                    <td colspan="5">
                       <div class="p-4 bg-base-200 rounded-box">
                         <h4 class="font-bold mb-2">Open Ports:</h4>
                         <ul class="list-disc list-inside">
