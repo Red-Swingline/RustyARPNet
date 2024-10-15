@@ -282,7 +282,7 @@
         </div>
         <div class="form-control">
           <label class="label" for="subnet">
-            <span class="label-text">Subnet</span>
+            <span class="label-text">Target Network/Mask</span>
           </label>
           <input
             id="subnet"
